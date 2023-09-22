@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::env::{self};
+use std::fs::File;
 use std::io::prelude::*;
 use std::net::{TcpListener, TcpStream};
 use std::path::Path;
@@ -72,19 +73,27 @@ fn process(request: [u8; BUFFER_SIZE]) -> Vec<u8> {
             }
         }
         let filepath = Path::new(&directory).join(filename);
-        match fs::read_to_string(filepath) {
-            Ok(contents) => {
-                let response = format!(
-                    "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {}\r\n\r\n{}",
-                    contents.len(),
-                    contents
-                );
+        if processed_request.method.eq("GET") {
+            match fs::read_to_string(filepath) {
+                Ok(contents) => {
+                    let response = format!(
+                        "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {}\r\n\r\n{}",
+                        contents.len(),
+                        contents
+                    );
 
-                resp.extend(response.as_bytes());
+                    resp.extend(response.as_bytes());
+                }
+                Err(_) => {
+                    resp.extend("HTTP/1.1 404 Not Found\r\n\r\nFile not found".as_bytes());
+                }
             }
-            Err(_) => {
-                resp.extend(b"HTTP/1.1 404 Not Found\r\n\r\nFile not found");
-            }
+        } else if processed_request.method.eq("POST") {
+            let mut file = File::create(filepath).unwrap();
+            file.write_all(processed_request.body.as_bytes()).unwrap();
+            resp.extend("HTTP/1.1 201 OK\r\n\r\n".as_bytes());
+        } else {
+            resp.extend("HTTP/1.1 500 Method Not Allowed\r\n\r\nMethod Not Allowed".as_bytes())
         }
     } else {
         resp.extend(NOTFOUND_HTTP.as_bytes());
