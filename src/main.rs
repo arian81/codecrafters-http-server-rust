@@ -51,6 +51,16 @@ fn process(request: [u8; BUFFER_SIZE]) -> Vec<u8> {
             )
             .as_bytes(),
         );
+    } else if processed_request.path.eq("/user-agent") {
+        let user_agent = processed_request.headers.get("User-Agent").unwrap();
+        resp.extend(
+            format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}",
+                user_agent.len(),
+                user_agent
+            )
+            .as_bytes(),
+        );
     } else {
         resp.extend(NOTFOUND_HTTP.as_bytes());
     }
