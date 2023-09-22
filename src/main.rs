@@ -70,7 +70,9 @@ fn process(request: [u8; BUFFER_SIZE]) -> Vec<u8> {
                 break;
             }
         }
-        match fs::read_to_string(Path::new(&directory).join(filename)) {
+        let filepath = Path::new(&directory).join(filename);
+        dbg!(filepath.clone());
+        match fs::read_to_string(filepath) {
             Ok(contents) => {
                 // Construct the HTTP response
                 let response = format!(
