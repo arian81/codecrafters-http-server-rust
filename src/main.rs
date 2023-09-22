@@ -62,30 +62,27 @@ fn process(request: [u8; BUFFER_SIZE]) -> Vec<u8> {
             .as_bytes(),
         );
     } else if processed_request.path.starts_with("/files") {
-        let mut directory: String = String::new();
+        let mut directory = ".";
         let filename = processed_request.path.strip_prefix("/files/").unwrap();
-        for arg in env::args() {
+        let args: Vec<String> = env::args().collect();
+        for (index, arg) in args.iter().enumerate() {
             if arg.starts_with("--directory") {
-                directory = arg.trim_start_matches("--directory=").to_string();
+                directory = &args[index + 1];
                 break;
             }
         }
         let filepath = Path::new(&directory).join(filename);
-        dbg!(filepath.clone());
         match fs::read_to_string(filepath) {
             Ok(contents) => {
-                // Construct the HTTP response
                 let response = format!(
                     "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}",
                     contents.len(),
                     contents
                 );
 
-                // Extend the response Vec<u8>
                 resp.extend(response.as_bytes());
             }
             Err(_) => {
-                // Handle the error case
                 resp.extend(b"HTTP/1.1 404 Not Found\r\n\r\nFile not found");
             }
         }
