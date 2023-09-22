@@ -32,9 +32,14 @@ fn process(request: [u8; BUFFER_SIZE]) -> Vec<u8> {
             let header: Vec<&str> = i.split(": ").collect();
             processed_request.headers.insert(header[0], header[1]);
         } else if !i.is_empty() {
-            let body = i.trim_matches('\0');
-            processed_request.body.push_str(body);
-            processed_request.body.push_str("\n");
+            if i.contains('\0') {
+                let body = i.trim_matches('\0');
+                processed_request.body.push_str(body);
+                continue;
+            } else {
+                processed_request.body.push_str(i);
+                processed_request.body.push_str("\n");
+            }
         }
     }
 
