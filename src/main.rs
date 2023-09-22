@@ -42,11 +42,12 @@ fn process(request: [u8; BUFFER_SIZE]) -> Vec<u8> {
     if processed_request.path.eq("/") {
         resp.extend(SUCCESS_HTTP.as_bytes());
     } else if processed_request.path.contains("echo") {
+        let value = processed_request.path.strip_prefix(r"/echo/").unwrap();
         resp.extend(
             format!(
                 "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}",
-                processed_request.body.len(),
-                processed_request.body
+                value.len(),
+                value
             )
             .as_bytes(),
         );
