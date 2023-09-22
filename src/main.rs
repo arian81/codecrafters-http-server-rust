@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::io::prelude::*;
-use std::net::TcpListener;
+use std::net::{TcpListener, TcpStream};
+use std::thread;
 
 const BUFFER_SIZE: usize = 1024;
 const SUCCESS_HTTP: &str = "HTTP/1.1 200 OK\r\n\r\n";
@@ -67,6 +68,12 @@ fn process(request: [u8; BUFFER_SIZE]) -> Vec<u8> {
     resp
 }
 
+fn handle_request(mut stream: TcpStream) {
+    let mut data: [u8; BUFFER_SIZE] = [0; BUFFER_SIZE];
+    stream.read(&mut data).unwrap();
+    stream.write(&process(data)).unwrap();
+}
+
 fn main() {
     // You can use print statements as follows for debugging, they'll be visible when running tests.
     println!("Logs from your program will appear here!");
@@ -75,11 +82,8 @@ fn main() {
 
     for stream in listener.incoming() {
         match stream {
-            Ok(mut stream) => {
-                let mut data: [u8; BUFFER_SIZE] = [0; BUFFER_SIZE];
-                stream.read(&mut data).unwrap();
-
-                stream.write(&process(data)).unwrap();
+            Ok(stream) => {
+                let _thread = thread::spawn(move || handle_request(stream));
             }
             Err(e) => {
                 println!("error: {}", e);
