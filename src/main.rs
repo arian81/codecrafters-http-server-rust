@@ -75,7 +75,7 @@ fn process(request: [u8; BUFFER_SIZE]) -> Vec<u8> {
         match fs::read_to_string(filepath) {
             Ok(contents) => {
                 let response = format!(
-                    "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}",
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {}\r\n\r\n{}",
                     contents.len(),
                     contents
                 );
