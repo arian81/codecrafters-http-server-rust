@@ -6,6 +6,9 @@ use std::net::{TcpListener, TcpStream};
 use std::path::Path;
 use std::{fs, thread};
 
+use flate2::write::GzEncoder;
+use flate2::Compression;
+
 const BUFFER_SIZE: usize = 1024;
 const SUCCESS_HTTP: &str = "HTTP/1.1 200 OK\r\n\r\n";
 const NOTFOUND_HTTP: &str = "HTTP/1.1 404 Not Found\r\n\r\n";
@@ -67,15 +70,25 @@ fn process(request: [u8; BUFFER_SIZE]) -> Vec<u8> {
                         .as_bytes(),
                     );
                 } else {
-                    resp.extend(
-                        format!(
-                            "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Encoding: {}\r\nContent-Length: {}\r\n\r\n{}",
-                            valid_encodings.join(", "),
-                            value.len(),
-                            value
-                        )
-                        .as_bytes(),
-                    );
+                    for encoding in valid_encodings {
+                        match encoding {
+                            "gzip" => {
+                                let mut e = GzEncoder::new(Vec::new(), Compression::default());
+                                e.write_all(value.as_bytes()).unwrap();
+                                let compressed_bytes = e.finish().unwrap();
+                                resp.extend(
+                                    format!(
+                                        "HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n",
+                                        compressed_bytes.len(),
+
+                                    )
+                                    .as_bytes(),
+                                );
+                                resp.extend(compressed_bytes);
+                            }
+                            _ => {}
+                        }
+                    }
                 }
             }
             None => {
