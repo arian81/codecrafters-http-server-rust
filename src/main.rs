@@ -124,7 +124,7 @@ fn process(request: [u8; BUFFER_SIZE]) -> Vec<u8> {
         } else if processed_request.method.eq("POST") {
             let mut file = File::create(filepath).unwrap();
             file.write_all(processed_request.body.as_bytes()).unwrap();
-            resp.extend("HTTP/1.1 201 OK\r\n\r\n".as_bytes());
+            resp.extend("HTTP/1.1 201 Created\r\n\r\n".as_bytes());
         } else {
             resp.extend("HTTP/1.1 500 Method Not Allowed\r\n\r\nMethod Not Allowed".as_bytes())
         }
