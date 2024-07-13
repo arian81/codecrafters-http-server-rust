@@ -49,15 +49,18 @@ fn process(request: [u8; BUFFER_SIZE]) -> Vec<u8> {
         resp.extend(SUCCESS_HTTP.as_bytes());
     } else if processed_request.path.starts_with("/echo") {
         let value = processed_request.path.strip_prefix(r"/echo/").unwrap();
-        // if (processed_request.headers.get("Content-Encoding").unwrap() == "gzip"){
-
-        // }
         match processed_request.headers.get("Accept-Encoding") {
-            Some(encoding) => {
-                if *encoding == "gzip" {
+            Some(encodings) => {
+                let passed_encodings = encodings.split(", ");
+                let supported_encodings = vec!["gzip"];
+                let valid_encodings: Vec<&str> = passed_encodings
+                    .filter(|encoding| supported_encodings.contains(encoding))
+                    .collect();
+
+                if valid_encodings.is_empty() {
                     resp.extend(
                         format!(
-                            "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Encoding: gzip\r\nContent-Length: {}\r\n\r\n{}",
+                            "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}",
                             value.len(),
                             value
                         )
@@ -66,7 +69,8 @@ fn process(request: [u8; BUFFER_SIZE]) -> Vec<u8> {
                 } else {
                     resp.extend(
                         format!(
-                            "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}",
+                            "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Encoding: {}\r\nContent-Length: {}\r\n\r\n{}",
+                            valid_encodings.join(", "),
                             value.len(),
                             value
                         )
