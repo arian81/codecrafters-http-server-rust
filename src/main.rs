@@ -49,14 +49,42 @@ fn process(request: [u8; BUFFER_SIZE]) -> Vec<u8> {
         resp.extend(SUCCESS_HTTP.as_bytes());
     } else if processed_request.path.starts_with("/echo") {
         let value = processed_request.path.strip_prefix(r"/echo/").unwrap();
-        resp.extend(
-            format!(
-                "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}",
-                value.len(),
-                value
-            )
-            .as_bytes(),
-        );
+        // if (processed_request.headers.get("Content-Encoding").unwrap() == "gzip"){
+
+        // }
+        match processed_request.headers.get("Accept-Encoding") {
+            Some(encoding) => {
+                if *encoding == "gzip" {
+                    resp.extend(
+                        format!(
+                            "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Encoding: gzip\r\nContent-Length: {}\r\n\r\n{}",
+                            value.len(),
+                            value
+                        )
+                        .as_bytes(),
+                    );
+                } else {
+                    resp.extend(
+                        format!(
+                            "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}",
+                            value.len(),
+                            value
+                        )
+                        .as_bytes(),
+                    );
+                }
+            }
+            None => {
+                resp.extend(
+                    format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}",
+                    value.len(),
+                    value
+                )
+                    .as_bytes(),
+                );
+            }
+        }
     } else if processed_request.path.eq("/user-agent") {
         let user_agent = processed_request.headers.get("User-Agent").unwrap();
         resp.extend(
